@@ -34,7 +34,7 @@ function cls(...parts) {
   return parts.filter(Boolean).join(" ");
 }
 
-const BRIDGE_BASE = import.meta.env.VITE_BRIDGE_BASE || "http://localhost:5050";
+const BRIDGE_BASE = import.meta.env.VITE_BRIDGE_BASE || "";
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || "";
 
 async function apiPost(path, body) {

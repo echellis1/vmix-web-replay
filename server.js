@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(cors());
@@ -133,8 +137,14 @@ app.post("/api/reel/stop", requireAuth, async (_req, res) => {
   }
 });
 
-const PORT = Number(process.env.PORT || 5050);
-app.listen(PORT, () => {
-  console.log(`vMix Replay Bridge running on http://0.0.0.0:${PORT}`);
+app.use(express.static(path.join(__dirname, "dist")));
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
+const PORT = Number(process.env.PORT || 3001);
+const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost";
+app.listen(PORT, HOST, () => {
+  console.log(`vMix Replay Bridge running on http://${HOST}:${PORT}`);
   console.log(`Using vMix API: ${VMIX_API_BASE}`);
 });
