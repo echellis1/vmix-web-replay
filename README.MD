@@ -21,5 +21,5 @@ npm i
 Create vmix-replay-ui/.env:
 
 VITE_BRIDGE_BASE=http://BRIDGE-IP:5050
-# Optional if you enabled AUTH_TOKEN on the bridge:
-# VITE_AUTH_TOKEN=yourtoken
+Optional if you enabled AUTH_TOKEN on the bridge:
+VITE_AUTH_TOKEN=yourtoken
