@@ -58,16 +58,13 @@ async function setLastEventCameras({ aOn = true, bOn = true }) {
   else await vmixCall("ReplayLastEventCameraOff", { Value: CAM_B });
 }
 
-async function markHighlight({ seconds, side, tag, camsMode }) {
+async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true }) {
   // 1) Create event (last N seconds)
   await vmixCall("ReplayMarkInOut", { Value: seconds });
 
   // 2) Apply camera rule (A=Hero, B=Wide)
-  if (camsMode === "A_ONLY") {
-    await setLastEventCameras({ aOn: true, bOn: false });
-  } else {
-    await setLastEventCameras({ aOn: true, bOn: true });
-  }
+  const bOn = camsMode === "A_BOTH" && camBEnabled;
+  await setLastEventCameras({ aOn: true, bOn });
 
   // 3) Label (e.g., "H • TD")
   const label = `${side} • ${tag}`;
@@ -92,7 +89,7 @@ app.get("/health", async (_req, res) => {
 // Main endpoint: one request = one highlight
 app.post("/api/highlight", requireAuth, async (req, res) => {
   try {
-    const { seconds, side, tag, camsMode } = req.body || {};
+    const { seconds, side, tag, camsMode, camBEnabled = true } = req.body || {};
 
     if (![5, 7, 10].includes(Number(seconds))) {
       return res.status(400).json({ ok: false, error: "seconds must be 5, 7, or 10" });
@@ -106,8 +103,17 @@ app.post("/api/highlight", requireAuth, async (req, res) => {
     if (!["A_ONLY", "A_BOTH"].includes(camsMode)) {
       return res.status(400).json({ ok: false, error: 'camsMode must be "A_ONLY" or "A_BOTH"' });
     }
+    if (typeof camBEnabled !== "boolean") {
+      return res.status(400).json({ ok: false, error: "camBEnabled must be a boolean" });
+    }
 
-    await markHighlight({ seconds: Number(seconds), side, tag: tag.trim(), camsMode });
+    await markHighlight({
+      seconds: Number(seconds),
+      side,
+      tag: tag.trim(),
+      camsMode,
+      camBEnabled,
+    });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });

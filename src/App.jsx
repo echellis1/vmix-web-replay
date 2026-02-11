@@ -55,6 +55,7 @@ export default function App() {
   const [sport, setSport] = useState("GENERAL");
   const [side, setSide] = useState("H"); // H=Home, A=Away
   const [busy, setBusy] = useState(false);
+  const [camBEnabled, setCamBEnabled] = useState(true);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
 
@@ -84,6 +85,11 @@ export default function App() {
     return len === "short" ? preset.short : preset.long;
   }
 
+  function resolveCamsLabel(camsMode) {
+    if (camsMode === "A_ONLY" || !camBEnabled) return "A only";
+    return "A+B";
+  }
+
   return (
     <div className="wrap">
       <header className="header">
@@ -100,6 +106,7 @@ export default function App() {
           <span className={cls("pill", side === "H" ? "pill-home" : "pill-away")}>
             Side: {side === "H" ? "HOME" : "AWAY"}
           </span>
+          <span className={cls("pill", camBEnabled ? "pill-accent" : "")}>Cam B: {camBEnabled ? "ON" : "OFF"}</span>
         </div>
       </header>
 
@@ -141,6 +148,24 @@ export default function App() {
             </button>
           </div>
 
+
+          <div className="row">
+            <button
+              className={cls("btn", camBEnabled && "btn-on")}
+              disabled={busy}
+              onClick={() => setCamBEnabled(true)}
+            >
+              Cam B On
+            </button>
+            <button
+              className={cls("btn", !camBEnabled && "btn-on")}
+              disabled={busy}
+              onClick={() => setCamBEnabled(false)}
+            >
+              Cam B Off
+            </button>
+          </div>
+
           <div className="row">
             <button
               className="btn btn-secondary"
@@ -152,6 +177,7 @@ export default function App() {
                     side,
                     tag: "MANUAL",
                     camsMode: "A_BOTH",
+                    camBEnabled,
                   })
                 )
               }
@@ -169,6 +195,7 @@ export default function App() {
                     side,
                     tag: "MANUAL",
                     camsMode: "A_BOTH",
+                    camBEnabled,
                   })
                 )
               }
@@ -216,13 +243,14 @@ export default function App() {
                         side,
                         tag: t.tag,
                         camsMode: t.cams,
+                        camBEnabled,
                       })
                     )
                   }
                 >
                   <div className="tagTitle">{t.tag}</div>
                   <div className="tagMeta">
-                    +{secs}s • {t.cams === "A_ONLY" ? "A only" : "A+B"}
+                    +{secs}s • {resolveCamsLabel(t.cams)}
                   </div>
                 </button>
               );
