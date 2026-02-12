@@ -22,6 +22,7 @@ let vmixHost = DEFAULT_VMIX_HOST;
 // Highlights list index (0-19). Using 1 per your plan.
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
 const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
+const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
 
 const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
 
@@ -127,6 +128,7 @@ app.get("/health", async (_req, res) => {
     vmixHostConfig: VMIX_CONFIG_PATH,
     highlightsList: HIGHLIGHTS_LIST,
     duplicateHighlightsList: DUPLICATE_HIGHLIGHTS_LIST,
+    reelPlayList: REEL_PLAY_LIST,
     camA: CAM_A,
     camB: CAM_B,
     authEnabled: Boolean(AUTH_TOKEN),
@@ -192,11 +194,11 @@ app.post("/api/highlight", requireAuth, async (req, res) => {
   }
 });
 
-// Play the highlight reel (list 1) to Output on Channel A
+// Play the highlight reel (list 2 by default) to Output on Channel A
 app.post("/api/reel/play", requireAuth, async (_req, res) => {
   try {
     // Select highlight list
-    await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
+    await vmixCall(`ReplaySelectEvents${REEL_PLAY_LIST}`, { Channel: "A" });
     // Play all to output
     await vmixCall("ReplayPlayAllEventsToOutput", { Channel: "A" });
     res.json({ ok: true });
