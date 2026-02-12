@@ -93,6 +93,54 @@ async function vmixGetStatusXml() {
   return res.text();
 }
 
+function parseDurationToMs(raw) {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim();
+  if (!value) return null;
+
+  if (/^\d+(?:\.\d+)?$/.test(value)) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    // Heuristic: vMix-style seconds are usually < 1000, milliseconds much larger.
+    return n > 1000 ? Math.round(n) : Math.round(n * 1000);
+  }
+
+  const tc = value.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:[\.:](\d{1,3}))?$/);
+  if (!tc) return null;
+
+  const hours = Number(tc[1]);
+  const minutes = Number(tc[2]);
+  const seconds = Number(tc[3]);
+  const fraction = tc[4] ? Number(tc[4].padEnd(3, "0")) : 0;
+
+  if (![hours, minutes, seconds, fraction].every(Number.isFinite)) return null;
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000 + fraction;
+}
+
+function parseReplayRemainingMs(statusXml) {
+  const keys = ["replayremaining", "remaining", "remainingtime", "timeremaining"];
+
+  for (const key of keys) {
+    const tagMatch = statusXml.match(new RegExp(`<${key}>([^<]+)</${key}>`, "i"));
+    const parsed = parseDurationToMs(tagMatch?.[1] || "");
+    if (parsed != null) return parsed;
+  }
+
+  const replayNode = statusXml.match(/<replay\s+([^>]+?)\s*\/?>(?:<\/replay>)?/i);
+  if (!replayNode) return null;
+
+  const attrs = Object.fromEntries(
+    [...replayNode[1].matchAll(/([a-zA-Z0-9_:-]+)="([^"]*)"/g)].map((m) => [m[1].toLowerCase(), m[2]])
+  );
+
+  for (const key of ["remaining", "remainingms", "remainingmilliseconds", "remainingtime", "timeremaining"]) {
+    const parsed = parseDurationToMs(attrs[key] || "");
+    if (parsed != null) return parsed;
+  }
+
+  return null;
+}
+
 function parseReplayPlayingState(statusXml) {
   const replayTag = statusXml.match(/<replay>(true|false)<\/replay>/i);
   if (replayTag) return replayTag[1].toLowerCase() === "true";
@@ -272,6 +320,22 @@ app.post("/api/highlight", requireAuth, async (req, res) => {
       camBEnabled,
     });
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.get("/api/reel/status", requireAuth, async (_req, res) => {
+  try {
+    const statusXml = await vmixGetStatusXml();
+    const isPlaying = parseReplayPlayingState(statusXml);
+    const remainingMs = parseReplayRemainingMs(statusXml);
+
+    res.json({
+      ok: true,
+      isPlaying,
+      remainingMs,
+    });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
