@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
 const SPORT_PRESETS = {
@@ -37,18 +37,25 @@ function cls(...parts) {
 const BRIDGE_BASE = import.meta.env.VITE_BRIDGE_BASE || "";
 const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || "";
 
-async function apiPost(path, body) {
+async function apiRequest(path, options = {}) {
   const res = await fetch(`${BRIDGE_BASE}${path}`, {
-    method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}),
+      ...(options.headers || {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    ...options,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
+}
+
+async function apiPost(path, body) {
+  return apiRequest(path, {
+    method: "POST",
+    body: body ? JSON.stringify(body) : undefined,
+  });
 }
 
 export default function App() {
@@ -58,9 +65,33 @@ export default function App() {
   const [camBEnabled, setCamBEnabled] = useState(true);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
+  const [vmixHost, setVmixHost] = useState("");
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
   const inFlightRef = useRef(false);
 
   const preset = SPORT_PRESETS[sport];
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadConfig() {
+      setError("");
+      try {
+        const data = await apiRequest("/api/config/vmix");
+        if (mounted) setVmixHost(data.vmixHost || "");
+      } catch (e) {
+        if (mounted) setError(`❌ ${e.message}`);
+      } finally {
+        if (mounted) setLoadingConfig(false);
+      }
+    }
+
+    loadConfig();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const groupedTags = useMemo(() => {
     // Put football-ish tags later; keep it simple
@@ -86,6 +117,27 @@ export default function App() {
     }
   }
 
+  async function saveVmixHost() {
+    if (!vmixHost.trim()) {
+      setError("❌ vMix IP/hostname is required");
+      return;
+    }
+
+    setError("");
+    setToast("");
+    setSavingConfig(true);
+    try {
+      const data = await apiPost("/api/config/vmix", { vmixHost: vmixHost.trim() });
+      setVmixHost(data.vmixHost);
+      setToast("✅ vMix host saved");
+    } catch (e) {
+      setError(`❌ ${e.message}`);
+    } finally {
+      setSavingConfig(false);
+      setTimeout(() => setToast(""), 1500);
+    }
+  }
+
   function resolveSeconds(len) {
     return len === "short" ? preset.short : preset.long;
   }
@@ -105,6 +157,7 @@ export default function App() {
 
         <div className="status">
           <span className="pill">Bridge: {BRIDGE_BASE}</span>
+          <span className="pill">vMix: {loadingConfig ? "Loading..." : vmixHost || "Not set"}</span>
           <span className={cls("pill", sport === "FOOTBALL" && "pill-accent")}>
             Preset: {sport === "FOOTBALL" ? "Football (7/10)" : "General (5/7)"}
           </span>
@@ -118,6 +171,26 @@ export default function App() {
       <div className="grid">
         <section className="panel">
           <h2>Sticky Controls</h2>
+
+          <div className="vmixConfig">
+            <label className="configLabel" htmlFor="vmix-host-input">
+              vMix PC IP / Hostname
+            </label>
+            <div className="row configRow">
+              <input
+                id="vmix-host-input"
+                className="hostInput"
+                type="text"
+                placeholder="e.g. 192.168.1.25"
+                value={vmixHost}
+                disabled={busy || loadingConfig || savingConfig}
+                onChange={(e) => setVmixHost(e.target.value)}
+              />
+              <button className="btn configSave" disabled={busy || loadingConfig || savingConfig} onClick={saveVmixHost}>
+                {savingConfig ? "Saving..." : "Save Host"}
+              </button>
+            </div>
+          </div>
 
           <div className="row">
             <button
@@ -153,20 +226,11 @@ export default function App() {
             </button>
           </div>
 
-
           <div className="row">
-            <button
-              className={cls("btn", camBEnabled && "btn-on")}
-              disabled={busy}
-              onClick={() => setCamBEnabled(true)}
-            >
+            <button className={cls("btn", camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(true)}>
               Cam B On
             </button>
-            <button
-              className={cls("btn", !camBEnabled && "btn-on")}
-              disabled={busy}
-              onClick={() => setCamBEnabled(false)}
-            >
+            <button className={cls("btn", !camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(false)}>
               Cam B Off
             </button>
           </div>
@@ -210,18 +274,10 @@ export default function App() {
           </div>
 
           <div className="row">
-            <button
-              className="btn btn-play"
-              disabled={busy}
-              onClick={() => run(() => apiPost("/api/reel/play"))}
-            >
+            <button className="btn btn-play" disabled={busy} onClick={() => run(() => apiPost("/api/reel/play"))}>
               ▶ Play Reel
             </button>
-            <button
-              className="btn btn-stop"
-              disabled={busy}
-              onClick={() => run(() => apiPost("/api/reel/stop"))}
-            >
+            <button className="btn btn-stop" disabled={busy} onClick={() => run(() => apiPost("/api/reel/stop"))}>
               ■ Stop
             </button>
           </div>
