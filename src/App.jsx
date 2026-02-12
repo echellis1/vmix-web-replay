@@ -68,6 +68,7 @@ export default function App() {
   const [vmixHost, setVmixHost] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [reelStatus, setReelStatus] = useState({ isPlaying: null, remainingMs: null });
   const inFlightRef = useRef(false);
 
   const preset = SPORT_PRESETS[sport];
@@ -90,6 +91,33 @@ export default function App() {
     loadConfig();
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadReelStatus() {
+      try {
+        const data = await apiRequest("/api/reel/status");
+        if (!mounted) return;
+        setReelStatus({
+          isPlaying: typeof data.isPlaying === "boolean" ? data.isPlaying : null,
+          remainingMs: Number.isFinite(data.remainingMs) ? data.remainingMs : null,
+        });
+      } catch {
+        if (mounted) {
+          setReelStatus({ isPlaying: null, remainingMs: null });
+        }
+      }
+    }
+
+    loadReelStatus();
+    const id = setInterval(loadReelStatus, 500);
+
+    return () => {
+      mounted = false;
+      clearInterval(id);
     };
   }, []);
 
@@ -147,6 +175,14 @@ export default function App() {
     return "A+B";
   }
 
+  function formatRemaining(ms) {
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
   return (
     <div className="wrap">
       <header className="header">
@@ -165,6 +201,9 @@ export default function App() {
             Side: {side === "H" ? "HOME" : "AWAY"}
           </span>
           <span className={cls("pill", camBEnabled ? "pill-accent" : "")}>Cam B: {camBEnabled ? "ON" : "OFF"}</span>
+          <span className={cls("pill", reelStatus.isPlaying && "pill-live")}>
+            Reel: {reelStatus.isPlaying ? (formatRemaining(reelStatus.remainingMs) ? `${formatRemaining(reelStatus.remainingMs)} left` : "Playing…") : "Idle"}
+          </span>
         </div>
       </header>
 

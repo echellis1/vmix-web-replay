@@ -23,6 +23,9 @@ let vmixHost = DEFAULT_VMIX_HOST;
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
 const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
 const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
+const REEL_RETURN_BUFFER_MS = Number(process.env.REEL_RETURN_BUFFER_MS || 500);
+const REEL_RETURN_POLL_MS = Number(process.env.REEL_RETURN_POLL_MS || 500);
+const REEL_RETURN_MAX_WAIT_MS = Number(process.env.REEL_RETURN_MAX_WAIT_MS || 10 * 60 * 1000);
 
 const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
 
@@ -79,6 +82,134 @@ async function vmixCall(Function, params = {}) {
     throw new Error(`vMix API error ${res.status}: ${text}`);
   }
   return true;
+}
+
+async function vmixGetStatusXml() {
+  const res = await fetch(getVmixApiBase());
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`vMix status error ${res.status}: ${text}`);
+  }
+  return res.text();
+}
+
+function parseDurationToMs(raw) {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim();
+  if (!value) return null;
+
+  if (/^\d+(?:\.\d+)?$/.test(value)) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    // Heuristic: vMix-style seconds are usually < 1000, milliseconds much larger.
+    return n > 1000 ? Math.round(n) : Math.round(n * 1000);
+  }
+
+  const tc = value.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:[\.:](\d{1,3}))?$/);
+  if (!tc) return null;
+
+  const hours = Number(tc[1]);
+  const minutes = Number(tc[2]);
+  const seconds = Number(tc[3]);
+  const fraction = tc[4] ? Number(tc[4].padEnd(3, "0")) : 0;
+
+  if (![hours, minutes, seconds, fraction].every(Number.isFinite)) return null;
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000 + fraction;
+}
+
+function parseReplayRemainingMs(statusXml) {
+  const keys = ["replayremaining", "remaining", "remainingtime", "timeremaining"];
+
+  for (const key of keys) {
+    const tagMatch = statusXml.match(new RegExp(`<${key}>([^<]+)</${key}>`, "i"));
+    const parsed = parseDurationToMs(tagMatch?.[1] || "");
+    if (parsed != null) return parsed;
+  }
+
+  const replayNode = statusXml.match(/<replay\s+([^>]+?)\s*\/?>(?:<\/replay>)?/i);
+  if (!replayNode) return null;
+
+  const attrs = Object.fromEntries(
+    [...replayNode[1].matchAll(/([a-zA-Z0-9_:-]+)="([^"]*)"/g)].map((m) => [m[1].toLowerCase(), m[2]])
+  );
+
+  for (const key of ["remaining", "remainingms", "remainingmilliseconds", "remainingtime", "timeremaining"]) {
+    const parsed = parseDurationToMs(attrs[key] || "");
+    if (parsed != null) return parsed;
+  }
+
+  return null;
+}
+
+function parseReplayPlayingState(statusXml) {
+  const replayTag = statusXml.match(/<replay>(true|false)<\/replay>/i);
+  if (replayTag) return replayTag[1].toLowerCase() === "true";
+
+  const replayNode = statusXml.match(/<replay\s+([^>]+?)\s*\/?>(?:<\/replay>)?/i);
+  if (!replayNode) return null;
+
+  const attrs = Object.fromEntries(
+    [...replayNode[1].matchAll(/([a-zA-Z0-9_:-]+)="([^"]*)"/g)].map((m) => [m[1].toLowerCase(), m[2]])
+  );
+
+  if (attrs.playing) return attrs.playing.toLowerCase() === "true";
+  if (attrs.state) return attrs.state.toLowerCase() === "playing";
+  if (attrs.speed != null) return Number(attrs.speed) > 0;
+
+  return null;
+}
+
+let reelReturnWatcher = null;
+
+function stopReelReturnWatcher() {
+  if (!reelReturnWatcher) return;
+  reelReturnWatcher.cancelled = true;
+  reelReturnWatcher = null;
+}
+
+function watchReplayAndReturnToPreview() {
+  stopReelReturnWatcher();
+
+  const watcher = { cancelled: false, sawPlayback: false, startedAt: Date.now() };
+  reelReturnWatcher = watcher;
+
+  const tick = async () => {
+    if (watcher.cancelled) return;
+
+    const elapsed = Date.now() - watcher.startedAt;
+    if (elapsed > REEL_RETURN_MAX_WAIT_MS) {
+      console.warn("Timed out waiting for replay to end; not forcing transition.");
+      if (reelReturnWatcher === watcher) reelReturnWatcher = null;
+      return;
+    }
+
+    try {
+      const statusXml = await vmixGetStatusXml();
+      const isPlaying = parseReplayPlayingState(statusXml);
+
+      if (isPlaying === true) {
+        watcher.sawPlayback = true;
+      } else if (isPlaying === false && watcher.sawPlayback) {
+        setTimeout(async () => {
+          if (watcher.cancelled) return;
+          try {
+            await vmixCall("Fade");
+          } catch (error) {
+            console.warn("Failed to transition from replay output back to preview:", error.message);
+          } finally {
+            if (reelReturnWatcher === watcher) reelReturnWatcher = null;
+          }
+        }, REEL_RETURN_BUFFER_MS);
+        return;
+      }
+    } catch (error) {
+      console.warn("Unable to poll replay status:", error.message);
+    }
+
+    setTimeout(tick, REEL_RETURN_POLL_MS);
+  };
+
+  setTimeout(tick, REEL_RETURN_POLL_MS);
 }
 
 // Camera control for the LAST replay event
@@ -194,13 +325,33 @@ app.post("/api/highlight", requireAuth, async (req, res) => {
   }
 });
 
+app.get("/api/reel/status", requireAuth, async (_req, res) => {
+  try {
+    const statusXml = await vmixGetStatusXml();
+    const isPlaying = parseReplayPlayingState(statusXml);
+    const remainingMs = parseReplayRemainingMs(statusXml);
+
+    res.json({
+      ok: true,
+      isPlaying,
+      remainingMs,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Play the highlight reel (list 2 by default) to Output on Channel B
 app.post("/api/reel/play", requireAuth, async (_req, res) => {
   try {
     // Select highlight list
     await vmixCall(`ReplaySelectEvents${REEL_PLAY_LIST}`, { Channel: "A" });
+
     // Play all to replay output B
     await vmixCall("ReplayPlayAllEventsToOutput", { Channel: "B" });
+
+    watchReplayAndReturnToPreview();
+
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -210,6 +361,7 @@ app.post("/api/reel/play", requireAuth, async (_req, res) => {
 // Optional: Stop replay output
 app.post("/api/reel/stop", requireAuth, async (_req, res) => {
   try {
+    stopReelReturnWatcher();
     await vmixCall("ReplayStop", { Channel: "B" });
     res.json({ ok: true });
   } catch (e) {
