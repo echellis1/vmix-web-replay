@@ -23,6 +23,7 @@ let vmixHost = DEFAULT_VMIX_HOST;
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
 const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
 const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
+const REEL_RETURN_BUFFER_MS = Number(process.env.REEL_RETURN_BUFFER_MS || 500);
 
 const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
 
@@ -79,6 +80,64 @@ async function vmixCall(Function, params = {}) {
     throw new Error(`vMix API error ${res.status}: ${text}`);
   }
   return true;
+}
+
+async function vmixGetStatusXml() {
+  const res = await fetch(getVmixApiBase());
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`vMix status error ${res.status}: ${text}`);
+  }
+  return res.text();
+}
+
+function getEventDurationFrames(attrs) {
+  const start = Number(attrs.startFrame ?? attrs.inFrame ?? attrs.inPoint ?? attrs.in);
+  const end = Number(attrs.endFrame ?? attrs.outFrame ?? attrs.outPoint ?? attrs.out);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(0, end - start);
+}
+
+function estimateSelectedListDurationMs(statusXml) {
+  const fpsMatch = statusXml.match(/<frameRate>([0-9.]+)<\/frameRate>/i);
+  const fps = Number(fpsMatch?.[1]);
+
+  if (!Number.isFinite(fps) || fps <= 0) return null;
+
+  const eventMatches = [...statusXml.matchAll(/<event\s+([^/>]+?)\s*\/?>(?:<\/event>)?/gi)];
+  if (!eventMatches.length) return null;
+
+  const totalFrames = eventMatches.reduce((sum, match) => {
+    const attrText = match[1] || "";
+    const attrs = Object.fromEntries(
+      [...attrText.matchAll(/([a-zA-Z0-9_:-]+)="([^"]*)"/g)].map((m) => [m[1], m[2]])
+    );
+    return sum + getEventDurationFrames(attrs);
+  }, 0);
+
+  if (!totalFrames) return null;
+
+  return Math.round((totalFrames / fps) * 1000);
+}
+
+let reelReturnTimer = null;
+
+function scheduleReturnToPreview(delayMs) {
+  if (reelReturnTimer) {
+    clearTimeout(reelReturnTimer);
+    reelReturnTimer = null;
+  }
+
+  reelReturnTimer = setTimeout(async () => {
+    try {
+      await vmixCall("Fade");
+    } catch (error) {
+      console.warn("Failed to transition from replay output back to preview:", error.message);
+    } finally {
+      reelReturnTimer = null;
+    }
+  }, delayMs);
 }
 
 // Camera control for the LAST replay event
@@ -199,8 +258,17 @@ app.post("/api/reel/play", requireAuth, async (_req, res) => {
   try {
     // Select highlight list
     await vmixCall(`ReplaySelectEvents${REEL_PLAY_LIST}`, { Channel: "A" });
+
+    const statusXml = await vmixGetStatusXml();
+    const estimatedDurationMs = estimateSelectedListDurationMs(statusXml);
+
     // Play all to replay output B
     await vmixCall("ReplayPlayAllEventsToOutput", { Channel: "B" });
+
+    if (estimatedDurationMs) {
+      scheduleReturnToPreview(estimatedDurationMs + REEL_RETURN_BUFFER_MS);
+    }
+
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -210,6 +278,10 @@ app.post("/api/reel/play", requireAuth, async (_req, res) => {
 // Optional: Stop replay output
 app.post("/api/reel/stop", requireAuth, async (_req, res) => {
   try {
+    if (reelReturnTimer) {
+      clearTimeout(reelReturnTimer);
+      reelReturnTimer = null;
+    }
     await vmixCall("ReplayStop", { Channel: "B" });
     res.json({ ok: true });
   } catch (e) {
