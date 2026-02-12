@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import "./App.css";
 
 const SPORT_PRESETS = {
@@ -58,6 +58,7 @@ export default function App() {
   const [camBEnabled, setCamBEnabled] = useState(true);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
+  const inFlightRef = useRef(false);
 
   const preset = SPORT_PRESETS[sport];
 
@@ -67,6 +68,9 @@ export default function App() {
   }, []);
 
   async function run(fn) {
+    if (inFlightRef.current) return;
+
+    inFlightRef.current = true;
     setError("");
     setToast("");
     setBusy(true);
@@ -77,6 +81,7 @@ export default function App() {
       setError(`❌ ${e.message}`);
     } finally {
       setBusy(false);
+      inFlightRef.current = false;
       setTimeout(() => setToast(""), 1200);
     }
   }
@@ -234,6 +239,7 @@ export default function App() {
               return (
                 <button
                   key={t.tag}
+                  type="button"
                   className="tag"
                   disabled={busy}
                   onClick={() =>
