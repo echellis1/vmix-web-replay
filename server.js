@@ -17,6 +17,9 @@ const VMIX_PORT = process.env.VMIX_PORT || "8088";
 
 // Highlights list index (0-19). Using 1 per your plan.
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
+const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
+
+const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
 
 // Which vMix replay camera corresponds to A/B:
 const CAM_A = Number(process.env.CAM_A || 1); // A = Hero
@@ -59,7 +62,7 @@ async function setLastEventCameras({ aOn = true, bOn = true }) {
 }
 
 async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true }) {
-  // 1) Ensure the desired highlights list is selected before creating the event
+  // 1) Ensure the primary highlights list is selected before creating the event
   await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
 
   // 2) Create event (last N seconds)
@@ -72,6 +75,18 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   // 4) Label (e.g., "H • TD")
   const label = `${side} • ${tag}`;
   await vmixCall("ReplaySetLastEventText", { Value: label });
+
+  // 5) Duplicate selected high-value tags to list 2 (or env-configured duplicate list)
+  if (!DUPLICATE_TAGS.has(tag) || DUPLICATE_HIGHLIGHTS_LIST === HIGHLIGHTS_LIST) return;
+
+  await vmixCall(`ReplaySelectEvents${DUPLICATE_HIGHLIGHTS_LIST}`, { Channel: "A" });
+  await vmixCall("ReplayMarkInOut", { Value: seconds });
+  await setLastEventCameras({ aOn: true, bOn });
+  await vmixCall("ReplaySetLastEventText", { Value: label });
+
+  // Keep list 1 selected and re-assert the original event label so it remains tagged.
+  await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
+  await vmixCall("ReplaySetLastEventText", { Value: label });
 }
 
 app.get("/health", async (_req, res) => {
@@ -80,6 +95,7 @@ app.get("/health", async (_req, res) => {
     ok: true,
     vmix: VMIX_API_BASE,
     highlightsList: HIGHLIGHTS_LIST,
+    duplicateHighlightsList: DUPLICATE_HIGHLIGHTS_LIST,
     camA: CAM_A,
     camB: CAM_B,
     authEnabled: Boolean(AUTH_TOKEN),
