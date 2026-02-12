@@ -83,6 +83,42 @@ h2 {
   margin-bottom: 10px;
 }
 
+.vmixConfig {
+  margin-bottom: 10px;
+}
+
+.configLabel {
+  display: block;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.configRow {
+  align-items: center;
+}
+
+.hostInput {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.2);
+  color: #eef2ff;
+  font-size: 14px;
+}
+
+.hostInput::placeholder {
+  color: rgba(238, 242, 255, 0.45);
+}
+
+.configSave {
+  flex: 0;
+  min-width: 105px;
+  padding: 12px 10px;
+}
+
 .btn {
   flex: 1;
   padding: 14px 12px;
@@ -98,7 +134,8 @@ h2 {
 }
 
 .btn:disabled,
-.tag:disabled { opacity: 0.55; cursor: not-allowed; }
+.tag:disabled,
+.hostInput:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-on {
   background: rgba(255,255,255,0.18);

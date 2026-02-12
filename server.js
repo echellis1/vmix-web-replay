@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import path from "path";
+import { promises as fs } from "fs";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -10,10 +11,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const VMIX_CONFIG_PATH = path.join(__dirname, "vmix-host.config.json");
+
 // ====== CONFIG ======
-// Put your vMix PC hostname/IP here (or set VMIX_HOST env var).
-const VMIX_HOST = process.env.VMIX_HOST || "VMIX-PC";
+const DEFAULT_VMIX_HOST = process.env.VMIX_HOST || "VMIX-PC";
 const VMIX_PORT = process.env.VMIX_PORT || "8088";
+
+let vmixHost = DEFAULT_VMIX_HOST;
 
 // Highlights list index (0-19). Using 1 per your plan.
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
@@ -25,7 +29,9 @@ const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"
 const CAM_A = Number(process.env.CAM_A || 1); // A = Hero
 const CAM_B = Number(process.env.CAM_B || 2); // B = Wide
 
-const VMIX_API_BASE = `http://${VMIX_HOST}:${VMIX_PORT}/api/`;
+function getVmixApiBase() {
+  return `http://${vmixHost}:${VMIX_PORT}/api/`;
+}
 
 // Optional simple auth token for your LAN
 const AUTH_TOKEN = process.env.AUTH_TOKEN || ""; // if blank, auth disabled
@@ -38,8 +44,31 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function normalizeHost(host) {
+  if (typeof host !== "string") return "";
+  return host.trim();
+}
+
+async function loadVmixHostConfig() {
+  try {
+    const raw = await fs.readFile(VMIX_CONFIG_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+    const configuredHost = normalizeHost(parsed.vmixHost);
+    if (configuredHost) vmixHost = configuredHost;
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.warn(`Unable to read ${VMIX_CONFIG_PATH}:`, error.message);
+    }
+  }
+}
+
+async function saveVmixHostConfig(host) {
+  const config = { vmixHost: host };
+  await fs.writeFile(VMIX_CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+}
+
 async function vmixCall(Function, params = {}) {
-  const url = new URL(VMIX_API_BASE);
+  const url = new URL(getVmixApiBase());
   url.searchParams.set("Function", Function);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
 
@@ -93,13 +122,40 @@ app.get("/health", async (_req, res) => {
   // lightweight: just report config; doesn't call vMix
   res.json({
     ok: true,
-    vmix: VMIX_API_BASE,
+    vmix: getVmixApiBase(),
+    vmixHost,
+    vmixHostConfig: VMIX_CONFIG_PATH,
     highlightsList: HIGHLIGHTS_LIST,
     duplicateHighlightsList: DUPLICATE_HIGHLIGHTS_LIST,
     camA: CAM_A,
     camB: CAM_B,
     authEnabled: Boolean(AUTH_TOKEN),
   });
+});
+
+app.get("/api/config/vmix", requireAuth, (_req, res) => {
+  res.json({
+    ok: true,
+    vmixHost,
+    vmixPort: VMIX_PORT,
+    vmixHostConfig: VMIX_CONFIG_PATH,
+  });
+});
+
+app.post("/api/config/vmix", requireAuth, async (req, res) => {
+  try {
+    const requestedHost = normalizeHost(req.body?.vmixHost);
+    if (!requestedHost) {
+      return res.status(400).json({ ok: false, error: "vmixHost is required" });
+    }
+
+    await saveVmixHostConfig(requestedHost);
+    vmixHost = requestedHost;
+
+    res.json({ ok: true, vmixHost, vmixPort: VMIX_PORT });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Main endpoint: one request = one highlight
@@ -166,7 +222,10 @@ app.get("*", (_req, res) => {
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost";
-app.listen(PORT, HOST, () => {
-  console.log(`vMix Replay Bridge running on http://${HOST}:${PORT}`);
-  console.log(`Using vMix API: ${VMIX_API_BASE}`);
+
+loadVmixHostConfig().finally(() => {
+  app.listen(PORT, HOST, () => {
+    console.log(`vMix Replay Bridge running on http://${HOST}:${PORT}`);
+    console.log(`Using vMix API: ${getVmixApiBase()}`);
+  });
 });
