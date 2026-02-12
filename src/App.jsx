@@ -171,8 +171,8 @@ export default function App() {
   }
 
   function resolveCamsLabel(camsMode) {
-    if (camsMode === "A_ONLY" || !camBEnabled) return "A only";
-    return "A+B";
+    if (camsMode === "A_ONLY" || !camBEnabled) return "Cam 1 only";
+    return "Cam 1 + Cam 2";
   }
 
   function formatRemaining(ms) {
@@ -188,7 +188,7 @@ export default function App() {
       <header className="header">
         <div>
           <div className="title">vMix Replay Controller</div>
-          <div className="sub">A = Hero • B = Wide • Highlights → List 1</div>
+          <div className="sub">Cam 1 = Hero • Cam 2 = Wide • Highlights → List 1</div>
         </div>
 
         <div className="status">
@@ -267,10 +267,10 @@ export default function App() {
 
           <div className="row">
             <button className={cls("btn", camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(true)}>
-              Cam B On
+              Cam 2 On
             </button>
             <button className={cls("btn", !camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(false)}>
-              Cam B Off
+              Cam 2 Off
             </button>
           </div>
 
