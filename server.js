@@ -325,6 +325,7 @@ app.post("/api/highlight", requireAuth, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.get("/api/reel/status", requireAuth, async (_req, res) => {
   try {
     const statusXml = await vmixGetStatusXml();
@@ -342,16 +343,24 @@ app.get("/api/reel/status", requireAuth, async (_req, res) => {
 });
 
 // Play the highlight reel (list 2 by default) to Output on Channel B
+=======
+// Play the highlight reel (list 2 by default) to Output on Channel A
+>>>>>>> parent of 052571a (Route reel play/stop to replay output B)
 app.post("/api/reel/play", requireAuth, async (_req, res) => {
   try {
     // Select highlight list
     await vmixCall(`ReplaySelectEvents${REEL_PLAY_LIST}`, { Channel: "A" });
+<<<<<<< HEAD
 
     // Play all to replay output B
     await vmixCall("ReplayPlayAllEventsToOutput", { Channel: "B" });
 
     watchReplayAndReturnToPreview();
 
+=======
+    // Play all to output
+    await vmixCall("ReplayPlayAllEventsToOutput", { Channel: "A" });
+>>>>>>> parent of 052571a (Route reel play/stop to replay output B)
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -361,8 +370,12 @@ app.post("/api/reel/play", requireAuth, async (_req, res) => {
 // Optional: Stop replay output
 app.post("/api/reel/stop", requireAuth, async (_req, res) => {
   try {
+<<<<<<< HEAD
     stopReelReturnWatcher();
     await vmixCall("ReplayStop", { Channel: "B" });
+=======
+    await vmixCall("ReplayStop", { Channel: "A" });
+>>>>>>> parent of 052571a (Route reel play/stop to replay output B)
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
