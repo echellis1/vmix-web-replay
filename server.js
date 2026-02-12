@@ -59,19 +59,19 @@ async function setLastEventCameras({ aOn = true, bOn = true }) {
 }
 
 async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true }) {
-  // 1) Create event (last N seconds)
+  // 1) Ensure the desired highlights list is selected before creating the event
+  await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
+
+  // 2) Create event (last N seconds)
   await vmixCall("ReplayMarkInOut", { Value: seconds });
 
-  // 2) Apply camera rule (A=Hero, B=Wide)
+  // 3) Apply camera rule (A=Hero, B=Wide)
   const bOn = camsMode === "A_BOTH" && camBEnabled;
   await setLastEventCameras({ aOn: true, bOn });
 
-  // 3) Label (e.g., "H • TD")
+  // 4) Label (e.g., "H • TD")
   const label = `${side} • ${tag}`;
   await vmixCall("ReplaySetLastEventText", { Value: label });
-
-  // 4) Copy into highlight list 1
-  await vmixCall("ReplayCopyLastEvent", { Value: HIGHLIGHTS_LIST });
 }
 
 app.get("/health", async (_req, res) => {
