@@ -4,6 +4,7 @@ import "./App.css";
 const SPORT_PRESETS = {
   GENERAL: { short: 5, long: 7 },
   FOOTBALL: { short: 7, long: 10 },
+  BASKETBALL: { short: 5, long: 7 },
   MMA: { short: 5, long: 7 },
 };
 
@@ -30,6 +31,17 @@ const TAGS_BY_SPORT = {
     { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
     { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
     { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
+  ],
+  BASKETBALL: [
+    { tag: "SCORE", len: "long", cams: "A_ONLY" },
+    { tag: "3PT", len: "long", cams: "A_ONLY" },
+    { tag: "DUNK", len: "long", cams: "A_ONLY" },
+    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
+    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
+    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+    { tag: "STEAL", len: "short", cams: "A_BOTH" },
+    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
+    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
   ],
   MMA: [
     { tag: "KNOCKDOWN", len: "long", cams: "A_ONLY" },
@@ -116,6 +128,7 @@ export default function App() {
     {
       GENERAL: "General (5/7)",
       FOOTBALL: "Football (7/10)",
+      BASKETBALL: "Basketball (5/7)",
       MMA: "MMA (5/7)",
     }[sport] || "General (5/7)";
 
@@ -227,6 +240,13 @@ export default function App() {
               onClick={() => setSport("FOOTBALL")}
             >
               Football (7/10)
+            </button>
+            <button
+              className={cls("btn", sport === "BASKETBALL" && "btn-on")}
+              disabled={busy}
+              onClick={() => setSport("BASKETBALL")}
+            >
+              Basketball (5/7)
             </button>
             <button className={cls("btn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
               MMA (5/7)
