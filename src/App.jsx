@@ -238,29 +238,29 @@ export default function App() {
             </div>
           </div>
 
-          <div className="row">
+          <div className="row sportRow">
             <button
-              className={cls("btn", sport === "GENERAL" && "btn-on")}
+              className={cls("btn", "sportBtn", sport === "GENERAL" && "btn-on")}
               disabled={busy}
               onClick={() => setSport("GENERAL")}
             >
               General (5/7)
             </button>
             <button
-              className={cls("btn", sport === "FOOTBALL" && "btn-on")}
+              className={cls("btn", "sportBtn", sport === "FOOTBALL" && "btn-on")}
               disabled={busy}
               onClick={() => setSport("FOOTBALL")}
             >
               Football (7/10)
             </button>
             <button
-              className={cls("btn", sport === "BASKETBALL" && "btn-on")}
+              className={cls("btn", "sportBtn", sport === "BASKETBALL" && "btn-on")}
               disabled={busy}
               onClick={() => setSport("BASKETBALL")}
             >
               Basketball (5/7)
             </button>
-            <button className={cls("btn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
+            <button className={cls("btn", "sportBtn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
               MMA (5/7)
             </button>
             <button
