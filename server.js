@@ -24,7 +24,16 @@ const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
 const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
 const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
 
-const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
+const DUPLICATE_TAGS = new Set([
+  "SCORE",
+  "GOAL",
+  "BIG PLAY",
+  "TD",
+  "3PT",
+  "DUNK",
+  "LAYUP",
+  "ASSIST",
+]);
 
 // Which vMix replay camera corresponds to Cam 1/Cam 2 labels:
 const CAM_A = Number(process.env.CAM_A || 1); // Cam 1
