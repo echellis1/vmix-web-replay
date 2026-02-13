@@ -8,70 +8,86 @@ const SPORT_OPTIONS = [
   { id: "MMA", label: "MMA (5/7)", short: 5, long: 7 },
 ];
 
-const SPORT_PRESETS = Object.fromEntries(
-  SPORT_OPTIONS.map(({ id, short, long }) => [id, { short, long }]),
-);
-
-const PRESET_LABELS = Object.fromEntries(SPORT_OPTIONS.map(({ id, label }) => [id, label]));
-
 // Tag definitions: choose whether tag defaults to A only or A+B and short/long
-const TAGS_BY_SPORT = {
-  GENERAL: [
-    // Scoring / finishes (A-only looks best with Hero)
-    { tag: "SCORE", len: "long", cams: "A_ONLY" },
-    { tag: "GOAL", len: "long", cams: "A_ONLY" },
-    { tag: "3PT", len: "long", cams: "A_ONLY" },
-    { tag: "DUNK", len: "long", cams: "A_ONLY" },
-    { tag: "FINISH", len: "long", cams: "A_ONLY" },
+const TAG_OPTIONS = [
+  {
+    id: "GENERAL",
+    tags: [
+      // Scoring / finishes (A-only looks best with Hero)
+      { tag: "SCORE", len: "long", cams: "A_ONLY" },
+      { tag: "GOAL", len: "long", cams: "A_ONLY" },
+      { tag: "3PT", len: "long", cams: "A_ONLY" },
+      { tag: "DUNK", len: "long", cams: "A_ONLY" },
+      { tag: "FINISH", len: "long", cams: "A_ONLY" },
 
-    // Defense / chaos (A+B for context)
-    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
-    { tag: "STEAL", len: "short", cams: "A_BOTH" },
-    { tag: "SAVE", len: "short", cams: "A_BOTH" },
-    { tag: "HIT", len: "short", cams: "A_BOTH" },
-    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
-  ],
-  FOOTBALL: [
-    { tag: "TD", len: "long", cams: "A_BOTH" },
-    { tag: "INT", len: "long", cams: "A_BOTH" },
-    { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
-    { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
-    { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
-  ],
-  BASKETBALL: [
-    { tag: "SCORE", len: "long", cams: "A_ONLY" },
-    { tag: "3PT", len: "long", cams: "A_ONLY" },
-    { tag: "DUNK", len: "long", cams: "A_ONLY" },
-    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
-    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
-    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
-    { tag: "STEAL", len: "short", cams: "A_BOTH" },
-    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
-    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
-  ],
-  MMA: [
-    { tag: "KNOCKDOWN", len: "long", cams: "A_ONLY" },
-    { tag: "KO/TKO", len: "long", cams: "A_ONLY" },
-    { tag: "SUB ATTEMPT", len: "long", cams: "A_BOTH" },
-    { tag: "TAKEDOWN", len: "long", cams: "A_BOTH" },
-    { tag: "REVERSAL", len: "long", cams: "A_BOTH" },
-    { tag: "STRIKING FLURRY", len: "short", cams: "A_ONLY" },
-    { tag: "CLINCH", len: "short", cams: "A_BOTH" },
-    { tag: "SCRAMBLE", len: "short", cams: "A_BOTH" },
-    { tag: "SPRAWL", len: "short", cams: "A_BOTH" },
-    { tag: "ESCAPE", len: "short", cams: "A_BOTH" },
-  ],
-  BASKETBALL: [
-    { tag: "3PT", len: "long", cams: "A_ONLY" },
-    { tag: "DUNK", len: "long", cams: "A_ONLY" },
-    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
-    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
-    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
-    { tag: "STEAL", len: "short", cams: "A_BOTH" },
-    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
-    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
-  ],
-};
+      // Defense / chaos (A+B for context)
+      { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+      { tag: "STEAL", len: "short", cams: "A_BOTH" },
+      { tag: "SAVE", len: "short", cams: "A_BOTH" },
+      { tag: "HIT", len: "short", cams: "A_BOTH" },
+      { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
+    ],
+  },
+  {
+    id: "FOOTBALL",
+    tags: [
+      { tag: "TD", len: "long", cams: "A_BOTH" },
+      { tag: "INT", len: "long", cams: "A_BOTH" },
+      { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
+      { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
+      { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
+    ],
+  },
+  {
+    id: "BASKETBALL",
+    tags: [
+      { tag: "SCORE", len: "long", cams: "A_ONLY" },
+      { tag: "3PT", len: "long", cams: "A_ONLY" },
+      { tag: "DUNK", len: "long", cams: "A_ONLY" },
+      { tag: "LAYUP", len: "long", cams: "A_ONLY" },
+      { tag: "ASSIST", len: "short", cams: "A_BOTH" },
+      { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+      { tag: "STEAL", len: "short", cams: "A_BOTH" },
+      { tag: "REBOUND", len: "short", cams: "A_BOTH" },
+      { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
+    ],
+  },
+  {
+    id: "MMA",
+    tags: [
+      { tag: "KNOCKDOWN", len: "long", cams: "A_ONLY" },
+      { tag: "KO/TKO", len: "long", cams: "A_ONLY" },
+      { tag: "SUB ATTEMPT", len: "long", cams: "A_BOTH" },
+      { tag: "TAKEDOWN", len: "long", cams: "A_BOTH" },
+      { tag: "REVERSAL", len: "long", cams: "A_BOTH" },
+      { tag: "STRIKING FLURRY", len: "short", cams: "A_ONLY" },
+      { tag: "CLINCH", len: "short", cams: "A_BOTH" },
+      { tag: "SCRAMBLE", len: "short", cams: "A_BOTH" },
+      { tag: "SPRAWL", len: "short", cams: "A_BOTH" },
+      { tag: "ESCAPE", len: "short", cams: "A_BOTH" },
+    ],
+  },
+];
+
+function toObjectById(options, valueSelector, label) {
+  const seenIds = new Set();
+
+  return Object.fromEntries(
+    options.map((option) => {
+      if (seenIds.has(option.id)) {
+        throw new Error(`Duplicate ${label} id: ${option.id}`);
+      }
+      seenIds.add(option.id);
+      return [option.id, valueSelector(option)];
+    }),
+  );
+}
+
+const TAGS_BY_SPORT = toObjectById(TAG_OPTIONS, ({ tags }) => tags, "sport tags");
+
+const SPORT_PRESETS = toObjectById(SPORT_OPTIONS, ({ short, long }) => ({ short, long }), "sport preset");
+
+const PRESET_LABELS = toObjectById(SPORT_OPTIONS, ({ label }) => label, "sport label");
 
 function cls(...parts) {
   return parts.filter(Boolean).join(" ");
