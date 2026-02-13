@@ -4,31 +4,46 @@ import "./App.css";
 const SPORT_PRESETS = {
   GENERAL: { short: 5, long: 7 },
   FOOTBALL: { short: 7, long: 10 },
+  MMA: { short: 5, long: 7 },
 };
 
 // Tag definitions: choose whether tag defaults to A only or A+B and short/long
-const TAGS = [
-  // Scoring / finishes (A-only looks best with Hero)
-  { tag: "SCORE", len: "long", cams: "A_ONLY" },
-  { tag: "GOAL", len: "long", cams: "A_ONLY" },
-  { tag: "3PT", len: "long", cams: "A_ONLY" },
-  { tag: "DUNK", len: "long", cams: "A_ONLY" },
-  { tag: "FINISH", len: "long", cams: "A_ONLY" },
+const TAGS_BY_SPORT = {
+  GENERAL: [
+    // Scoring / finishes (A-only looks best with Hero)
+    { tag: "SCORE", len: "long", cams: "A_ONLY" },
+    { tag: "GOAL", len: "long", cams: "A_ONLY" },
+    { tag: "3PT", len: "long", cams: "A_ONLY" },
+    { tag: "DUNK", len: "long", cams: "A_ONLY" },
+    { tag: "FINISH", len: "long", cams: "A_ONLY" },
 
-  // Defense / chaos (A+B for context)
-  { tag: "BLOCK", len: "short", cams: "A_BOTH" },
-  { tag: "STEAL", len: "short", cams: "A_BOTH" },
-  { tag: "SAVE", len: "short", cams: "A_BOTH" },
-  { tag: "HIT", len: "short", cams: "A_BOTH" },
-  { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
-
-  // Football-specific (works in GENERAL too, just uses preset lengths)
-  { tag: "TD", len: "long", cams: "A_BOTH" },
-  { tag: "INT", len: "long", cams: "A_BOTH" },
-  { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
-  { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
-  { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
-];
+    // Defense / chaos (A+B for context)
+    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+    { tag: "STEAL", len: "short", cams: "A_BOTH" },
+    { tag: "SAVE", len: "short", cams: "A_BOTH" },
+    { tag: "HIT", len: "short", cams: "A_BOTH" },
+    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
+  ],
+  FOOTBALL: [
+    { tag: "TD", len: "long", cams: "A_BOTH" },
+    { tag: "INT", len: "long", cams: "A_BOTH" },
+    { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
+    { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
+    { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
+  ],
+  MMA: [
+    { tag: "KNOCKDOWN", len: "long", cams: "A_ONLY" },
+    { tag: "KO/TKO", len: "long", cams: "A_ONLY" },
+    { tag: "SUB ATTEMPT", len: "long", cams: "A_BOTH" },
+    { tag: "TAKEDOWN", len: "long", cams: "A_BOTH" },
+    { tag: "REVERSAL", len: "long", cams: "A_BOTH" },
+    { tag: "STRIKING FLURRY", len: "short", cams: "A_ONLY" },
+    { tag: "CLINCH", len: "short", cams: "A_BOTH" },
+    { tag: "SCRAMBLE", len: "short", cams: "A_BOTH" },
+    { tag: "SPRAWL", len: "short", cams: "A_BOTH" },
+    { tag: "ESCAPE", len: "short", cams: "A_BOTH" },
+  ],
+};
 
 function cls(...parts) {
   return parts.filter(Boolean).join(" ");
@@ -94,9 +109,15 @@ export default function App() {
   }, []);
 
   const groupedTags = useMemo(() => {
-    // Put football-ish tags later; keep it simple
-    return TAGS;
-  }, []);
+    return TAGS_BY_SPORT[sport] || TAGS_BY_SPORT.GENERAL;
+  }, [sport]);
+
+  const presetLabel =
+    {
+      GENERAL: "General (5/7)",
+      FOOTBALL: "Football (7/10)",
+      MMA: "MMA (5/7)",
+    }[sport] || "General (5/7)";
 
   async function run(fn) {
     if (inFlightRef.current) return;
@@ -159,7 +180,7 @@ export default function App() {
           <span className="pill">Bridge: {BRIDGE_BASE}</span>
           <span className="pill">vMix: {loadingConfig ? "Loading..." : vmixHost || "Not set"}</span>
           <span className={cls("pill", sport === "FOOTBALL" && "pill-accent")}>
-            Preset: {sport === "FOOTBALL" ? "Football (7/10)" : "General (5/7)"}
+            Preset: {presetLabel}
           </span>
           <span className={cls("pill", side === "H" ? "pill-home" : "pill-away")}>
             Side: {side === "H" ? "HOME" : "AWAY"}
@@ -206,6 +227,9 @@ export default function App() {
               onClick={() => setSport("FOOTBALL")}
             >
               Football (7/10)
+            </button>
+            <button className={cls("btn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
+              MMA (5/7)
             </button>
           </div>
 
@@ -320,7 +344,7 @@ export default function App() {
           </div>
 
           <div className="hint">
-            Tip: Edit <code>TAGS</code> to match your sports and preferred lengths.
+            Tip: Edit <code>TAGS_BY_SPORT</code> to match each sport&apos;s tags and preferred lengths.
           </div>
         </section>
       </div>
