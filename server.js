@@ -115,9 +115,10 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   await setLastEventCameras({ aOn: true, bOn });
   await vmixCall("ReplaySetLastEventText", { Value: label });
 
-  // Keep Replays selected and re-assert the original event label so it remains tagged.
+  // Return selection to the primary highlights list.
+  // Avoid a second ReplaySetLastEventText call here because vMix can target a
+  // different "last" event after list switches, which may overwrite prior labels.
   await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
-  await vmixCall("ReplaySetLastEventText", { Value: label });
 }
 
 app.get("/health", async (_req, res) => {
