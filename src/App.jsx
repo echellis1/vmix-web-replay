@@ -173,7 +173,7 @@ export default function App() {
       <header className="header">
         <div>
           <div className="title">vMix Replay Controller</div>
-          <div className="sub">Cam 1 = Hero • Cam 2 = Wide • Highlights → Replays</div>
+          <div className="sub">Cam 1 = Hero • Cam 2 = Wide • CAM2 appears in labels when Cam 2 is used</div>
         </div>
 
         <div className="status">
