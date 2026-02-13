@@ -217,9 +217,23 @@ app.post("/api/reel/stop", requireAuth, async (_req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, "dist")));
+const DIST_DIR = path.join(__dirname, "dist");
+const DIST_INDEX_PATH = path.join(DIST_DIR, "index.html");
+
+app.use(express.static(DIST_DIR));
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  fs.access(DIST_INDEX_PATH)
+    .then(() => {
+      res.sendFile(DIST_INDEX_PATH);
+    })
+    .catch(() => {
+      res
+        .status(503)
+        .type("text/plain")
+        .send(
+          'Frontend build not found. Run "npm run build" before "npm start", or use "npm run dev" for development.',
+        );
+    });
 });
 
 const PORT = Number(process.env.PORT || 3001);
