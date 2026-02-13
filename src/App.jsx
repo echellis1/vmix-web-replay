@@ -68,7 +68,6 @@ export default function App() {
   const [vmixHost, setVmixHost] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
-  const [reelStatus, setReelStatus] = useState({ isPlaying: null, remainingMs: null });
   const inFlightRef = useRef(false);
 
   const preset = SPORT_PRESETS[sport];
@@ -91,33 +90,6 @@ export default function App() {
     loadConfig();
     return () => {
       mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadReelStatus() {
-      try {
-        const data = await apiRequest("/api/reel/status");
-        if (!mounted) return;
-        setReelStatus({
-          isPlaying: typeof data.isPlaying === "boolean" ? data.isPlaying : null,
-          remainingMs: Number.isFinite(data.remainingMs) ? data.remainingMs : null,
-        });
-      } catch {
-        if (mounted) {
-          setReelStatus({ isPlaying: null, remainingMs: null });
-        }
-      }
-    }
-
-    loadReelStatus();
-    const id = setInterval(loadReelStatus, 500);
-
-    return () => {
-      mounted = false;
-      clearInterval(id);
     };
   }, []);
 
@@ -171,16 +143,8 @@ export default function App() {
   }
 
   function resolveCamsLabel(camsMode) {
-    if (camsMode === "A_ONLY" || !camBEnabled) return "Cam 1 only";
-    return "Cam 1 + Cam 2";
-  }
-
-  function formatRemaining(ms) {
-    if (!Number.isFinite(ms) || ms < 0) return null;
-    const totalSeconds = Math.ceil(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    if (camsMode === "A_ONLY" || !camBEnabled) return "A only";
+    return "A+B";
   }
 
   return (
@@ -188,7 +152,7 @@ export default function App() {
       <header className="header">
         <div>
           <div className="title">vMix Replay Controller</div>
-          <div className="sub">Cam 1 = Hero • Cam 2 = Wide • Highlights → List 1</div>
+          <div className="sub">A = Hero • B = Wide • Highlights → List 1</div>
         </div>
 
         <div className="status">
@@ -201,9 +165,6 @@ export default function App() {
             Side: {side === "H" ? "HOME" : "AWAY"}
           </span>
           <span className={cls("pill", camBEnabled ? "pill-accent" : "")}>Cam B: {camBEnabled ? "ON" : "OFF"}</span>
-          <span className={cls("pill", reelStatus.isPlaying && "pill-live")}>
-            Reel: {reelStatus.isPlaying ? (formatRemaining(reelStatus.remainingMs) ? `${formatRemaining(reelStatus.remainingMs)} left` : "Playing…") : "Idle"}
-          </span>
         </div>
       </header>
 
@@ -267,10 +228,10 @@ export default function App() {
 
           <div className="row">
             <button className={cls("btn", camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(true)}>
-              Cam 2 On
+              Cam B On
             </button>
             <button className={cls("btn", !camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(false)}>
-              Cam 2 Off
+              Cam B Off
             </button>
           </div>
 
