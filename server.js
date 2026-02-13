@@ -26,9 +26,9 @@ const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
 
 const DUPLICATE_TAGS = new Set(["SCORE", "GOAL", "BIG PLAY", "TD", "3PT", "DUNK"]);
 
-// Which vMix replay camera corresponds to A/B:
-const CAM_A = Number(process.env.CAM_A || 1); // A = Hero
-const CAM_B = Number(process.env.CAM_B || 2); // B = Wide
+// Which vMix replay camera corresponds to Cam 1/Cam 2 labels:
+const CAM_A = Number(process.env.CAM_A || 1); // Cam 1
+const CAM_B = Number(process.env.CAM_B || 2); // Cam 2
 
 function getVmixApiBase() {
   return `http://${vmixHost}:${VMIX_PORT}/api/`;
@@ -83,7 +83,7 @@ async function vmixCall(Function, params = {}) {
 
 // Camera control for the LAST replay event
 async function setLastEventCameras({ aOn = true, bOn = true }) {
-  // A always on in your workflow
+  // Cam 1 always on in your workflow
   if (aOn) await vmixCall("ReplayLastEventCameraOn", { Value: CAM_A });
 
   // Toggle wide on/off based on rule
@@ -98,7 +98,7 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   // 2) Create event (last N seconds)
   await vmixCall("ReplayMarkInOut", { Value: seconds });
 
-  // 3) Apply camera rule (A=Hero, B=Wide)
+  // 3) Apply camera rule (Cam 1 + optional Cam 2)
   const bOn = camsMode === "A_BOTH" && camBEnabled;
   await setLastEventCameras({ aOn: true, bOn });
 
