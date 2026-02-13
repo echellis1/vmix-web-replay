@@ -20,7 +20,7 @@ A web-based vMix Replay Controller with a React frontend and Express backend bri
 - `VMIX_HOST` - vMix PC hostname/IP (default: "VMIX-PC")
 - `VMIX_PORT` - vMix API port (default: "8088")
 - `HIGHLIGHTS_LIST` - Highlight list index 0-19 (default: 1)
-- `CAM_A` / `CAM_B` - Camera indices (default: 1, 2)
+- `CAM_A` / `CAM_B` - Cam 1 / Cam 2 indices (default: 1, 2)
 - `AUTH_TOKEN` - Optional auth token for the bridge API
 - `VITE_BRIDGE_BASE` - Frontend bridge URL (defaults to same-origin proxy)
 - `VITE_AUTH_TOKEN` - Frontend auth token
