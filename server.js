@@ -19,7 +19,7 @@ const VMIX_PORT = process.env.VMIX_PORT || "8088";
 
 let vmixHost = DEFAULT_VMIX_HOST;
 
-// Highlights list index (0-19). Using 1 per your plan.
+// Replays list index (0-19). Using 1 per your plan.
 const HIGHLIGHTS_LIST = Number(process.env.HIGHLIGHTS_LIST || 1);
 const DUPLICATE_HIGHLIGHTS_LIST = Number(process.env.DUPLICATE_HIGHLIGHTS_LIST || 2);
 const REEL_PLAY_LIST = Number(process.env.REEL_PLAY_LIST || 2);
@@ -106,7 +106,7 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   const label = `${side} • ${tag}`;
   await vmixCall("ReplaySetLastEventText", { Value: label });
 
-  // 5) Duplicate selected high-value tags to list 2 (or env-configured duplicate list)
+  // 5) Duplicate selected high-value tags to Highlights (or env-configured duplicate list)
   if (!DUPLICATE_TAGS.has(tag) || DUPLICATE_HIGHLIGHTS_LIST === HIGHLIGHTS_LIST) return;
 
   await vmixCall(`ReplaySelectEvents${DUPLICATE_HIGHLIGHTS_LIST}`, { Channel: "A" });
@@ -114,7 +114,7 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   await setLastEventCameras({ aOn: true, bOn });
   await vmixCall("ReplaySetLastEventText", { Value: label });
 
-  // Keep list 1 selected and re-assert the original event label so it remains tagged.
+  // Keep Replays selected and re-assert the original event label so it remains tagged.
   await vmixCall(`ReplaySelectEvents${HIGHLIGHTS_LIST}`, { Channel: "A" });
   await vmixCall("ReplaySetLastEventText", { Value: label });
 }
