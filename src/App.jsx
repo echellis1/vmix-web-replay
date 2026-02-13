@@ -6,6 +6,7 @@ const SPORT_PRESETS = {
   FOOTBALL: { short: 7, long: 10 },
   BASKETBALL: { short: 5, long: 7 },
   MMA: { short: 5, long: 7 },
+  BASKETBALL: { short: 5, long: 7 },
 };
 
 // Tag definitions: choose whether tag defaults to A only or A+B and short/long
@@ -54,6 +55,16 @@ const TAGS_BY_SPORT = {
     { tag: "SCRAMBLE", len: "short", cams: "A_BOTH" },
     { tag: "SPRAWL", len: "short", cams: "A_BOTH" },
     { tag: "ESCAPE", len: "short", cams: "A_BOTH" },
+  ],
+  BASKETBALL: [
+    { tag: "3PT", len: "long", cams: "A_ONLY" },
+    { tag: "DUNK", len: "long", cams: "A_ONLY" },
+    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
+    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
+    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+    { tag: "STEAL", len: "short", cams: "A_BOTH" },
+    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
+    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
   ],
 };
 
@@ -130,6 +141,7 @@ export default function App() {
       FOOTBALL: "Football (7/10)",
       BASKETBALL: "Basketball (5/7)",
       MMA: "MMA (5/7)",
+      BASKETBALL: "Basketball (5/7)",
     }[sport] || "General (5/7)";
 
   async function run(fn) {
@@ -250,6 +262,13 @@ export default function App() {
             </button>
             <button className={cls("btn", "sportBtn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
               MMA (5/7)
+            </button>
+            <button
+              className={cls("btn", sport === "BASKETBALL" && "btn-on")}
+              disabled={busy}
+              onClick={() => setSport("BASKETBALL")}
+            >
+              Basketball (5/7)
             </button>
           </div>
 
