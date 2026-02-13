@@ -157,7 +157,9 @@ Stops replay output on channel B.
 
 Certain tags are duplicated to the secondary highlights list by default:
 
-- `SCORE`, `GOAL`, `BIG PLAY`, `TD`, `3PT`, `DUNK`
+- `SCORE`, `GOAL`, `BIG PLAY`, `TD`, `3PT`, `DUNK`, `LAYUP`, `ASSIST`
+
+Basketball note: only premium scoring/feature moments auto-duplicate (`3PT`, `DUNK`, `LAYUP`, `ASSIST`) while utility tags like `REBOUND`, `STEAL`, `BLOCK`, and `TURNOVER` stay in the primary list unless manually promoted.
 
 ---
 
