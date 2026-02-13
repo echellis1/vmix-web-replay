@@ -164,8 +164,8 @@ export default function App() {
   }
 
   function resolveCamsLabel(camsMode) {
-    if (camsMode === "A_ONLY" || !camBEnabled) return "A only";
-    return "A+B";
+    if (camsMode === "A_ONLY" || !camBEnabled) return "Cam 1 only";
+    return "Cam 1 + Cam 2";
   }
 
   return (
@@ -173,7 +173,7 @@ export default function App() {
       <header className="header">
         <div>
           <div className="title">vMix Replay Controller</div>
-          <div className="sub">A = Hero • B = Wide • Highlights → Replays</div>
+          <div className="sub">Cam 1 = Hero • Cam 2 = Wide • Highlights → Replays</div>
         </div>
 
         <div className="status">
@@ -185,7 +185,7 @@ export default function App() {
           <span className={cls("pill", side === "H" ? "pill-home" : "pill-away")}>
             Side: {side === "H" ? "HOME" : "AWAY"}
           </span>
-          <span className={cls("pill", camBEnabled ? "pill-accent" : "")}>Cam B: {camBEnabled ? "ON" : "OFF"}</span>
+          <span className={cls("pill", camBEnabled ? "pill-accent" : "")}>Cam 2: {camBEnabled ? "ON" : "OFF"}</span>
         </div>
       </header>
 
@@ -252,10 +252,10 @@ export default function App() {
 
           <div className="row">
             <button className={cls("btn", camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(true)}>
-              Cam B On
+              Cam 2 On
             </button>
             <button className={cls("btn", !camBEnabled && "btn-on")} disabled={busy} onClick={() => setCamBEnabled(false)}>
-              Cam B Off
+              Cam 2 Off
             </button>
           </div>
 
