@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
-const SPORT_PRESETS = {
-  GENERAL: { short: 5, long: 7 },
-  FOOTBALL: { short: 7, long: 10 },
-  MMA: { short: 5, long: 7 },
-};
+const SPORT_OPTIONS = [
+  { id: "GENERAL", label: "General (5/7)", short: 5, long: 7 },
+  { id: "FOOTBALL", label: "Football (7/10)", short: 7, long: 10 },
+  { id: "BASKETBALL", label: "Basketball (5/7)", short: 5, long: 7 },
+  { id: "MMA", label: "MMA (5/7)", short: 5, long: 7 },
+];
+
+const SPORT_PRESETS = Object.fromEntries(
+  SPORT_OPTIONS.map(({ id, short, long }) => [id, { short, long }]),
+);
+
+const PRESET_LABELS = Object.fromEntries(SPORT_OPTIONS.map(({ id, label }) => [id, label]));
 
 // Tag definitions: choose whether tag defaults to A only or A+B and short/long
 const TAGS_BY_SPORT = {
@@ -30,6 +37,17 @@ const TAGS_BY_SPORT = {
     { tag: "FUMBLE", len: "long", cams: "A_BOTH" },
     { tag: "SACK", len: "short", cams: "A_ONLY" }, // tight hero is usually great
     { tag: "BIG PLAY", len: "long", cams: "A_BOTH" },
+  ],
+  BASKETBALL: [
+    { tag: "SCORE", len: "long", cams: "A_ONLY" },
+    { tag: "3PT", len: "long", cams: "A_ONLY" },
+    { tag: "DUNK", len: "long", cams: "A_ONLY" },
+    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
+    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
+    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+    { tag: "STEAL", len: "short", cams: "A_BOTH" },
+    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
+    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
   ],
   MMA: [
     { tag: "KNOCKDOWN", len: "long", cams: "A_ONLY" },
@@ -112,12 +130,7 @@ export default function App() {
     return TAGS_BY_SPORT[sport] || TAGS_BY_SPORT.GENERAL;
   }, [sport]);
 
-  const presetLabel =
-    {
-      GENERAL: "General (5/7)",
-      FOOTBALL: "Football (7/10)",
-      MMA: "MMA (5/7)",
-    }[sport] || "General (5/7)";
+  const presetLabel = PRESET_LABELS[sport] || PRESET_LABELS.GENERAL;
 
   async function run(fn) {
     if (inFlightRef.current) return;
@@ -213,24 +226,17 @@ export default function App() {
             </div>
           </div>
 
-          <div className="row">
-            <button
-              className={cls("btn", sport === "GENERAL" && "btn-on")}
-              disabled={busy}
-              onClick={() => setSport("GENERAL")}
-            >
-              General (5/7)
-            </button>
-            <button
-              className={cls("btn", sport === "FOOTBALL" && "btn-on")}
-              disabled={busy}
-              onClick={() => setSport("FOOTBALL")}
-            >
-              Football (7/10)
-            </button>
-            <button className={cls("btn", sport === "MMA" && "btn-on")} disabled={busy} onClick={() => setSport("MMA")}>
-              MMA (5/7)
-            </button>
+          <div className="row sportRow">
+            {SPORT_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                className={cls("btn", "sportBtn", sport === option.id && "btn-on")}
+                disabled={busy}
+                onClick={() => setSport(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
 
           <div className="row">
