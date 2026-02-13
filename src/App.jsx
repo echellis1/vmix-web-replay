@@ -61,6 +61,16 @@ const TAGS_BY_SPORT = {
     { tag: "SPRAWL", len: "short", cams: "A_BOTH" },
     { tag: "ESCAPE", len: "short", cams: "A_BOTH" },
   ],
+  BASKETBALL: [
+    { tag: "3PT", len: "long", cams: "A_ONLY" },
+    { tag: "DUNK", len: "long", cams: "A_ONLY" },
+    { tag: "LAYUP", len: "long", cams: "A_ONLY" },
+    { tag: "ASSIST", len: "short", cams: "A_BOTH" },
+    { tag: "BLOCK", len: "short", cams: "A_BOTH" },
+    { tag: "STEAL", len: "short", cams: "A_BOTH" },
+    { tag: "REBOUND", len: "short", cams: "A_BOTH" },
+    { tag: "TURNOVER", len: "short", cams: "A_BOTH" },
+  ],
 };
 
 function cls(...parts) {
