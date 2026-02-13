@@ -117,6 +117,8 @@ h2 {
   flex: 0;
   min-width: 105px;
   padding: 12px 10px;
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.14);
 }
 
 .btn {
@@ -124,7 +126,7 @@ h2 {
   padding: 14px 12px;
   border-radius: 14px;
   border: 1px solid rgba(138, 180, 255, 0.35);
-  background: rgba(86, 116, 255, 0.30);
+  background: rgba(38, 72, 150, 0.62);
   color: #eef2ff;
   font-weight: 750;
   font-size: 14px;
@@ -139,33 +141,28 @@ h2 {
 .hostInput:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-on {
-  background: rgba(78, 214, 162, 0.34);
-  border-color: rgba(111, 255, 187, 0.55);
+  background: rgba(63, 184, 120, 0.62);
+  border-color: rgba(144, 255, 193, 0.78);
+}
+
+.btn-home,
+.btn-away {
+  border-color: rgba(138, 180, 255, 0.35);
 }
 
 .btn-secondary {
-  background: rgba(152, 92, 255, 0.30);
-  border-color: rgba(220, 128, 255, 0.45);
-}
-
-.btn-home {
-  background: rgba(54, 204, 118, 0.30);
-  border-color: rgba(95, 238, 150, 0.48);
-}
-
-.btn-away {
-  background: rgba(255, 142, 72, 0.30);
-  border-color: rgba(255, 178, 99, 0.5);
+  background: rgba(142, 92, 255, 0.6);
+  border-color: rgba(198, 158, 255, 0.7);
 }
 
 .btn-play {
-  background: rgba(64, 170, 255, 0.32);
-  border-color: rgba(106, 206, 255, 0.55);
+  background: rgba(38, 168, 164, 0.62);
+  border-color: rgba(114, 239, 231, 0.72);
 }
 
 .btn-stop {
-  background: rgba(255, 90, 118, 0.30);
-  border-color: rgba(255, 128, 158, 0.5);
+  background: rgba(210, 58, 58, 0.62);
+  border-color: rgba(255, 142, 142, 0.74);
 }
 
 .btn:not(:disabled):hover {
