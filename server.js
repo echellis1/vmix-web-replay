@@ -102,8 +102,9 @@ async function markHighlight({ seconds, side, tag, camsMode, camBEnabled = true 
   const bOn = camsMode === "A_BOTH" && camBEnabled;
   await setLastEventCameras({ aOn: true, bOn });
 
-  // 4) Label (e.g., "H • TD")
-  const label = `${side} • ${tag}`;
+  // 4) Label (e.g., "H • TD • CAM2" when Cam 2 is active)
+  const camSuffix = bOn ? " • CAM2" : "";
+  const label = `${side} • ${tag}${camSuffix}`;
   await vmixCall("ReplaySetLastEventText", { Value: label });
 
   // 5) Duplicate selected high-value tags to Highlights (or env-configured duplicate list)
